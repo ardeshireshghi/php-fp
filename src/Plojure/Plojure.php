@@ -3,11 +3,39 @@
 namespace Plojure;
 use Closure;
 
+function partial(callable $fn, array $args) {
+
+  return function() use ($fn, $args) {
+    $mergedArgs = array_merge($args, func_get_args());
+    return call_user_func_array($fn, $mergedArgs);
+  };
+}
+
+function curry(callable $fn, $arity = null)
+{
+  $reflectionfn = new \ReflectionFunction($fn);
+  $args = $reflectionfn->getParameters();
+  $currentArity = ($arity !== null) ? $arity : count($args);
+
+  $curryFunction = function() use ($currentArity, $fn) {
+    $thisArgs = func_get_args();
+    $argCount = count($thisArgs);
+
+    // Call original function when arity matches
+    if ($argCount === $currentArity) {
+      return call_user_func_array($fn, $thisArgs);
+    }
+
+    $newFn = partial($fn, $thisArgs);
+    return curry($newFn, $currentArity - $argCount);
+  };
+
+  return $curryFunction;
+}
+
 class Plojure implements PlojureContract
 {
   static $instance;
-
-  private function construct() {}
 
   public static function get()
   {
@@ -18,22 +46,27 @@ class Plojure implements PlojureContract
     return static::$instance;
   }
 
-  public function curry(Closure $fn)
+  public function curry(callable $fn)
   {
-    return $fn;
+    return curry($fn);
   }
 
-  public function map(Closure $fn, array $data = null)
+  public function map(callable $fn, array $data = null)
   {
-    return $fn;
+    if (is_array($data)) {
+      return array_map($fn, $data);
+    }
+
+    $curriedMap = curry('array_map');
+    return $curriedMap($fn);
   }
 
-  public function filter(Closure $fn, array $data = null)
+  public function filter(callable $fn, array $data = null)
   {
-    return $fn;
+    //TODO
   }
-  public function reduce(Closure $fn, $initialValue, array $data = null)
+  public function reduce(callable $fn, $initialValue, array $data = null)
   {
-    return $fn;
+    //TODO
   }
 }
