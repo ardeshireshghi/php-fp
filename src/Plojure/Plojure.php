@@ -3,8 +3,9 @@
 namespace Plojure;
 use Closure;
 
-function partial(callable $fn, array $args) {
+const CURRY_PLACEHOLDER = 'plojure_curry_placeholder';
 
+function partial(callable $fn, array $args) {
   return function() use ($fn, $args) {
     $mergedArgs = array_merge($args, func_get_args());
     return call_user_func_array($fn, $mergedArgs);
@@ -35,38 +36,54 @@ function curry(callable $fn, $arity = null)
 
 class Plojure implements PlojureContract
 {
-  static $instance;
-
-  public static function get()
-  {
-    if (!static::$instance) {
-      static::$instance = new static;
-    }
-
-    return static::$instance;
-  }
-
-  public function curry(callable $fn)
+  public static function curry(callable $fn)
   {
     return curry($fn);
   }
 
-  public function map(callable $fn, array $data = null)
+  public static function map(callable $fn, array $data = null)
   {
+    $handlerFn = 'array_map';
+
     if (is_array($data)) {
-      return array_map($fn, $data);
+      return $handlerFn($fn, $data);
     }
 
-    $curriedMap = curry('array_map');
+    $curriedMap = curry($handlerFn);
     return $curriedMap($fn);
   }
 
-  public function filter(callable $fn, array $data = null)
+  public static function filter(callable $fn, array $data = null)
   {
-    //TODO
+    $handlerFn = function($fn, $data) {
+      return array_filter($data, $fn);
+    };
+
+    if (is_array($data)) {
+      return $handlerFn($fn, $data);
+    }
+
+    $curriedFilter = curry($handlerFn);
+    return $curriedFilter($fn);
   }
-  public function reduce(callable $fn, $initialValue, array $data = null)
+
+  public static function reduce(callable $fn, $initialValue, array $data = null)
   {
-    //TODO
+    $handlerFn = function($fn, $initialValue, $data) {
+      $acc = $initialValue;
+
+      foreach ($data as $index => $value) {
+        $acc = $fn($acc, $value, $index, $data);
+      }
+
+      return $acc;
+    };
+
+    if (is_array($data)) {
+      return $handlerFn($fn, $initialValue, $data);
+    }
+
+    $curriedReduce = curry($handlerFn);
+    return $curriedReduce($fn, $initialValue);
   }
 }

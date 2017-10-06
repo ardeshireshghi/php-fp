@@ -5,8 +5,8 @@ use Closure;
 
 interface PlojureContract
 {
-  public function curry(callable $fn);
-  public function map(callable $fn, array $data = null);
-  public function filter(callable $fn, array $data = null);
-  public function reduce(callable $fn, $initialValue, array $data = null);
+  public static function curry(callable $fn);
+  public static function map(callable $fn, array $data = null);
+  public static function filter(callable $fn, array $data = null);
+  public static function reduce(callable $fn, $initialValue, array $data = null);
 }
